@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PesaPal Pay - Merchant Portal</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 80px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 44px;
+      margin-bottom: 15px;
+    }
+
+    p {
+      color: #6b7280;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .buttons {
+      margin-top: 35px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    a {
+      text-decoration: none;
+      padding: 14px 25px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: #111827;
+      color: white;
+    }
+
+    .secondary {
+      background: white;
+      color: #111827;
+      border: 1px solid #d1d5db;
+    }
+
+    .features {
+      margin-top: 70px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .feature {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.05);
+    }
+
+    .feature h3 {
+      margin-top: 0;
+    }
+
+    .feature p {
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>PesaPal Pay</h1>
+
+    <p>
+      Central payment tools for merchants.
+      Create your account, get your API key,
+      and start accepting payments.
+    </p>
+
+    <div class="buttons">
+      <a href="signup.html" class="primary">
+        Create Merchant Account
+      </a>
+
+      <a href="login.html" class="secondary">
+        Merchant Login
+      </a>
+    </div>
+
+    <div class="features">
+
+      <div class="feature">
+        <h3>Easy Integration</h3>
+        <p>
+          Connect your website to our central payment API.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>Your API Key</h3>
+        <p>
+          Each merchant gets their own secure API key.
+        </p>
+      </div>
+
+      <div class="feature">
+        <h3>Payment Tracking</h3>
+        <p>
+          Monitor your payment transactions from one dashboard.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
+
