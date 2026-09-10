@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Merchant Account</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 35px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin: 16px 0 7px;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #d7dbe2;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 24px;
+      padding: 14px;
+      border: 0;
+      border-radius: 8px;
+      background: #111827;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .login {
+      text-align: center;
+      margin-top: 20px;
+      color: #666;
+    }
+
+    a {
+      color: #111827;
+      font-weight: 600;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+
+  <h1>Create account</h1>
+
+  <div class="subtitle">
+    Create your merchant account to use PesaPal payments.
+  </div>
+
+  <form id="signupForm">
+
+    <label for="businessName">Business name</label>
+    <input
+      id="businessName"
+      type="text"
+      placeholder="My Business"
+      required
+    >
+
+    <label for="domain">Website</label>
+    <input
+      id="domain"
+      type="url"
+      placeholder="https://example.com"
+    >
+
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      placeholder="you@example.com"
+      required
+    >
+
+    <label for="password">Password</label>
+    <input
+      id="password"
+      type="password"
+      placeholder="At least 6 characters"
+      minlength="6"
+      required
+    >
+
+    <button id="signupButton" type="submit">
+      Create Account
+    </button>
+
+  </form>
+
+  <div id="message" class="message"></div>
+
+  <div class="login">
+    Already have an account?
+    <a href="login.html">Log in</a>
+  </div>
+
+</div>
+
+<script>
+  const SUPABASE_URL =
+    "https://lxrdkforhtiudmghydqx.supabase.co";
+
+  const SUPABASE_ANON_KEY =
+    "sb_publishable_4wQzDSF_QnU8DpWA-WbFgQ_hvyvSFr";
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
+
+  const form = document.getElementById("signupForm");
+  const button = document.getElementById("signupButton");
+  const message = document.getElementById("message");
+
+  function showMessage(text, type) {
+    message.textContent = text;
+    message.className = "message " + type;
+    message.style.display = "block";
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    button.disabled = true;
+    button.textContent = "Creating account...";
+    message.style.display = "none";
+
+    const name =
+      document.getElementById("businessName").value.trim();
+
+    const domain =
+      document.getElementById("domain").value.trim();
+
+    const email =
+      document.getElementById("email").value.trim();
+
+    const password =
+      document.getElementById("password").value;
+
+    try {
+
+      // 1. Create Supabase Auth account
+      const { data, error } =
+        await supabaseClient.auth.signUp({
+          email,
+          password
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data.user) {
+        throw new Error("Account could not be created.");
+      }
+
+      // 2. Get current session
+      const {
+        data: sessionData
+      } = await supabaseClient.auth.getSession();
+
+      const session = sessionData.session;
+
+      /*
+       * If email confirmation is enabled,
+       * Supabase may not give us a session yet.
+       */
+      if (!session) {
+        showMessage(
+          "Account created. Please check your email and confirm your account, then log in.",
+          "success"
+        );
+
+        form.reset();
+        button.disabled = false;
+        button.textContent = "Create Account";
+        return;
+      }
+
+      // 3. Create merchant profile
+      const response =
+        await fetch(
+          SUPABASE_URL +
+          "/functions/v1/create-merchant-profile",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization":
+                "Bearer " + session.access_token
+            },
+
+            body: JSON.stringify({
+              name,
+              domain,
+              callback_url: domain
+            })
+          }
+        );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.error ||
+          "Merchant profile could not be created."
+        );
+      }
+
+      showMessage(
+        "Account created successfully! Redirecting...",
+        "success"
+      );
+
+      setTimeout(() => {
+        window.location.href = "dashboard.html";
+      }, 1200);
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Something went wrong.",
+        "error"
+      );
+
+      button.disabled = false;
+      button.textContent = "Create Account";
+    }
+  });
+</script>
+
+</body>
+</html>
