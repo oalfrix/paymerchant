@@ -1,0 +1,466 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Merchant Dashboard</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #1f2937;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .logout {
+      background: white;
+      color: #111827;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .welcome {
+      margin-bottom: 25px;
+    }
+
+    .welcome h1 {
+      margin-bottom: 5px;
+    }
+
+    .welcome p {
+      color: #6b7280;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .row {
+      margin-bottom: 16px;
+    }
+
+    .label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 5px;
+    }
+
+    .value {
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .api-box {
+      background: #f3f4f6;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 15px 0;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .generate {
+      background: #2563eb;
+      color: white;
+      width: 100%;
+    }
+
+    .copy {
+      background: #16a34a;
+      color: white;
+      width: 100%;
+    }
+
+    .warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+
+    .success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 12px;
+      border-radius: 8px;
+      display: none;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 15px;
+      }
+
+      main {
+        margin-top: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h2>Merchant Dashboard</h2>
+  <button class="logout" id="logoutBtn">Log out</button>
+</header>
+
+<main>
+
+  <div id="loading" class="loading">
+    Loading your account...
+  </div>
+
+  <div id="dashboard" style="display:none;">
+
+    <div class="welcome">
+      <h1>Welcome, <span id="merchantName">Merchant</span></h1>
+      <p>Manage your payment gateway account.</p>
+    </div>
+
+    <div class="grid">
+
+      <!-- Merchant Information -->
+      <div class="card">
+        <h3>Business Information</h3>
+
+        <div class="row">
+          <span class="label">Business Name</span>
+          <div class="value" id="businessName">-</div>
+        </div>
+
+        <div class="row">
+          <span class="label">Merchant ID</span>
+          <div class="value" id="merchantId">-</div>
+        </div>
+
+        <div class="row">
+          <span class="label">Domain</span>
+          <div class="value" id="domain">-</div>
+        </div>
+
+        <div class="row">
+          <span class="label">Callback URL</span>
+          <div class="value" id="callbackUrl">-</div>
+        </div>
+
+      </div>
+
+      <!-- API Key -->
+      <div class="card">
+        <h3>API Access</h3>
+
+        <div class="warning">
+          Your API key is secret. Never publish it in your website's
+          frontend JavaScript if your website code is publicly accessible.
+          Save the key securely.
+        </div>
+
+        <button class="generate" id="generateBtn">
+          Generate API Key
+        </button>
+
+        <div id="keyContainer" style="display:none;">
+
+          <div class="api-box" id="apiKey"></div>
+
+          <button class="copy" id="copyBtn">
+            Copy API Key
+          </button>
+
+          <div class="success" id="successMessage">
+            API key generated successfully. Save it now.
+          </div>
+
+        </div>
+
+        <div class="error" id="errorMessage"></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+
+const SUPABASE_URL = "https://lxrdkforhtiudmghydqx.supabase.co";
+
+// Use the SAME current Supabase publishable key
+// that you used in signup.html and login.html.
+const SUPABASE_PUBLISHABLE_KEY =
+  "YOUR_CURRENT_SUPABASE_PUBLISHABLE_KEY";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  }
+);
+
+
+async function loadDashboard() {
+
+  const loading = document.getElementById("loading");
+  const dashboard = document.getElementById("dashboard");
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if (!session) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  const { data: merchant, error } = await supabaseClient
+    .from("merchants")
+    .select("id, name, domain, callback_url, active")
+    .eq("user_id", session.user.id)
+    .maybeSingle();
+
+  if (error) {
+
+    console.error(error);
+
+    loading.innerHTML =
+      "Unable to load your merchant account.";
+
+    return;
+  }
+
+  if (!merchant) {
+
+    loading.innerHTML =
+      "Merchant profile not found. Please complete registration.";
+
+    return;
+  }
+
+  document.getElementById("merchantName").textContent =
+    merchant.name || "Merchant";
+
+  document.getElementById("businessName").textContent =
+    merchant.name || "-";
+
+  document.getElementById("merchantId").textContent =
+    merchant.id || "-";
+
+  document.getElementById("domain").textContent =
+    merchant.domain || "-";
+
+  document.getElementById("callbackUrl").textContent =
+    merchant.callback_url || "-";
+
+  loading.style.display = "none";
+  dashboard.style.display = "block";
+}
+
+
+async function generateApiKey() {
+
+  const generateBtn = document.getElementById("generateBtn");
+  const errorMessage = document.getElementById("errorMessage");
+  const successMessage = document.getElementById("successMessage");
+  const keyContainer = document.getElementById("keyContainer");
+  const apiKeyElement = document.getElementById("apiKey");
+
+  errorMessage.style.display = "none";
+  successMessage.style.display = "none";
+
+  generateBtn.disabled = true;
+  generateBtn.textContent = "Generating...";
+
+  try {
+
+    const {
+      data: { session }
+    } = await supabaseClient.auth.getSession();
+
+    if (!session) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/generate-merchant-api-key`,
+      {
+        method: "POST",
+
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error || "Unable to generate API key."
+      );
+    }
+
+    apiKeyElement.textContent = result.api_key;
+
+    keyContainer.style.display = "block";
+
+    successMessage.style.display = "block";
+
+    generateBtn.textContent = "Generate New API Key";
+
+  } catch (error) {
+
+    console.error(error);
+
+    errorMessage.textContent =
+      error.message || "Something went wrong.";
+
+    errorMessage.style.display = "block";
+
+    generateBtn.textContent = "Generate API Key";
+
+  } finally {
+
+    generateBtn.disabled = false;
+
+  }
+}
+
+
+document
+  .getElementById("generateBtn")
+  .addEventListener("click", generateApiKey);
+
+
+document
+  .getElementById("copyBtn")
+  .addEventListener("click", async () => {
+
+    const key =
+      document.getElementById("apiKey").textContent;
+
+    try {
+
+      await navigator.clipboard.writeText(key);
+
+      document.getElementById("copyBtn").textContent =
+        "Copied!";
+
+      setTimeout(() => {
+
+        document.getElementById("copyBtn").textContent =
+          "Copy API Key";
+
+      }, 2000);
+
+    } catch (error) {
+
+      alert("Copy failed. Please copy the key manually.");
+
+    }
+
+  });
+
+
+document
+  .getElementById("logoutBtn")
+  .addEventListener("click", async () => {
+
+    await supabaseClient.auth.signOut();
+
+    window.location.href = "login.html";
+
+  });
+
+
+loadDashboard();
+
+</script>
+
+</body>
+</html>
+
